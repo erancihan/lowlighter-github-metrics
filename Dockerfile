@@ -10,6 +10,7 @@ RUN chmod +x /metrics/source/app/action/index.mjs
 # Install latest chrome dev package, fonts to support major charsets and skip chromium download on puppeteer install
 # Based on https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
 RUN apt-get update
+RUN apt-get install -y build-essential
 RUN apt-get install -y wget gnupg ca-certificates libgconf-2-4
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
@@ -20,6 +21,7 @@ RUN apt-get install -y curl unzip
 RUN curl -fsSL https://deno.land/x/install/install.sh | DENO_INSTALL=/usr/local sh 
 # Install ruby to support github licensed gem
 RUN apt-get install -y ruby-full git g++ cmake pkg-config libssl-dev 
+RUN apt-get install -y ruby-dev
 RUN gem install licensed 
 # Install python for node-gyp
 RUN apt-get install -y python3 
