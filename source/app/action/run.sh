@@ -73,7 +73,10 @@ fi
 
 # if METRICS_IMAGE_OVERRIDE is set, override image name
 if [[ ! -z $METRICS_IMAGE_OVERRIDE ]]; then
-  METRICS_IMAGE=$METRICS_IMAGE_OVERRIDE
+  METRICS_IMAGE=$METRICS_IMAGE_OVERRIDE # Override image name
+  METRICS_USE_PREBUILT_IMAGE="yes" # Assume image is pre-built
+  METRICS_IMAGE_NEEDS_BUILD="0" # Assume image is present
+
   echo "Overriding image name with: $METRICS_IMAGE"
 fi
 
