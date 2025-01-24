@@ -70,6 +70,13 @@ else
   echo "Using a forked version"
   METRICS_IMAGE=metrics:forked-$METRICS_VERSION
 fi
+
+# if METRICS_IMAGE_OVERRIDE is set, override image name
+if [[ ! -z $METRICS_IMAGE_OVERRIDE ]]; then
+  METRICS_IMAGE=$METRICS_IMAGE_OVERRIDE
+  echo "Overriding image name with: $METRICS_IMAGE"
+fi
+
 echo "Image name: $METRICS_IMAGE"
 
 # Build image if necessary
