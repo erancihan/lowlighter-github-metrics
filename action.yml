@@ -1583,9 +1583,11 @@ runs:
 
         # if METRICS_IMAGE_OVERRIDE is set, override image name
         if [[ ! -z $METRICS_IMAGE_OVERRIDE ]]; then
-          METRICS_IMAGE=$METRICS_IMAGE_OVERRIDE # Override image name
-          METRICS_USE_PREBUILT_IMAGE="yes" # Assume image is pre-built
-          METRICS_IMAGE_NEEDS_BUILD="false" # Assume image is present
+          # override image name
+          METRICS_IMAGE=$METRICS_IMAGE_OVERRIDE
+
+          # pull image
+          docker image pull $METRICS_IMAGE
 
           echo "Overriding image name with: $METRICS_IMAGE"
         fi
