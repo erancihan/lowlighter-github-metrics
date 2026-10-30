@@ -35,12 +35,13 @@ inputs:
       External contributions sources
 
       Contributions from these sources are merged by date with GitHub contributions and stacked on calendar.
-      Each source is an object with a `type`, an optional `name` and an optional `color`, along with type specific settings:
+      Each source is an object with a `type`, an optional `name` and an optional `color`, along with type specific settings.
+      When `color` is not set, per day colors from source data are used if available, or a default color for source type otherwise.
 
       - `file`: JSON file served over http(s)
         - `url`: File URL (mandatory)
         - `headers`: Additional request headers (e.g. `{"Authorization": "token ..."}` for private files)
-        - Accepted formats are `[{"date": "YYYY-MM-DD", "contributionCount": 1}]` and `{"YYYY-MM-DD": 1}` (GitLab's `/users/:username/calendar.json`)
+        - Accepted formats are `[{"date": "YYYY-MM-DD", "contributionCount": 1, "color": "#fc6d26"}]` (`color` is optional) and `{"YYYY-MM-DD": 1}` (GitLab's `/users/:username/calendar.json`)
       - `gitlab`: GitLab events API (gitlab.com or self-hosted)
         - `url`: GitLab instance URL (defaults to `https://gitlab.com`)
         - `token`: GitLab personal access token with `read_user` scope (mandatory, use a secret)

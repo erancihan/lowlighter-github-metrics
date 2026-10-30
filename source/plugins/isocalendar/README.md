@@ -63,12 +63,13 @@ All product and company names are trademarks™ or registered® trademarks of th
     <td nowrap="nowrap"><h4><code>plugin_isocalendar_sources</code></h4></td>
     <td rowspan="2"><p>External contributions sources</p>
 <p>Contributions from these sources are merged by date with GitHub contributions and stacked on calendar.
-Each source is an object with a <code>type</code>, an optional <code>name</code> and an optional <code>color</code>, along with type specific settings:</p>
+Each source is an object with a <code>type</code>, an optional <code>name</code> and an optional <code>color</code>, along with type specific settings.
+When <code>color</code> is not set, per day colors from source data are used if available, or a default color for source type otherwise.</p>
 <ul>
 <li><code>file</code>: JSON file served over http(s)<ul>
 <li><code>url</code>: File URL (mandatory)</li>
 <li><code>headers</code>: Additional request headers (e.g. <code>{&quot;Authorization&quot;: &quot;token ...&quot;}</code> for private files)</li>
-<li>Accepted formats are <code>[{&quot;date&quot;: &quot;YYYY-MM-DD&quot;, &quot;contributionCount&quot;: 1}]</code> and <code>{&quot;YYYY-MM-DD&quot;: 1}</code> (GitLab&#39;s <code>/users/:username/calendar.json</code>)</li>
+<li>Accepted formats are <code>[{&quot;date&quot;: &quot;YYYY-MM-DD&quot;, &quot;contributionCount&quot;: 1, &quot;color&quot;: &quot;#fc6d26&quot;}]</code> (<code>color</code> is optional) and <code>{&quot;YYYY-MM-DD&quot;: 1}</code> (GitLab&#39;s <code>/users/:username/calendar.json</code>)</li>
 </ul>
 </li>
 <li><code>gitlab</code>: GitLab events API (gitlab.com or self-hosted)<ul>

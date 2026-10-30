@@ -1,6 +1,6 @@
-/**Default colors for external sources (used when not specified in source settings) */
+/**Default colors for external sources (used when neither source settings nor source data specify one) */
 const colors = {
-  file: "#9be9a8",
+  file: "#fb8f44",
   gitlab: "#fc6d26",
 }
 
@@ -26,9 +26,12 @@ export async function load({login, sources, start, end, imports}) {
     }
     try {
       console.debug(`metrics/compute/${login}/plugins > isocalendar > loading source "${name}" (${type})`)
-      const counts = await loaders[type]({login, source, start, end, imports})
-      results.push({name, color: source.color ?? colors[type], counts})
-      console.debug(`metrics/compute/${login}/plugins > isocalendar > loaded source "${name}" (${counts.size} days)`)
+      const days = await loaders[type]({login, source, start, end, imports})
+      //Resolve colors (source settings > source data > default)
+      for (const entry of days.values())
+        entry.color = source.color ?? entry.color ?? colors[type]
+      results.push({name, color: source.color ?? colors[type], days})
+      console.debug(`metrics/compute/${login}/plugins > isocalendar > loaded source "${name}" (${days.size} days)`)
     }
     catch (error) {
       console.warn(`metrics/compute/${login}/plugins > isocalendar > failed to load source "${name}": ${error.message}`)
@@ -37,37 +40,38 @@ export async function load({login, sources, start, end, imports}) {
   return results
 }
 
-/**Loaders (each returns a Map of "YYYY-MM-DD" => count) */
+/**Loaders (each returns a Map of "YYYY-MM-DD" => {count, color?}) */
 const loaders = {
-  /** JSON file served over http(s)
-   * Accepted formats:
-   * - [{date: "YYYY-MM-DD", contributionCount: number}, ...] ("count" is also accepted)
-   * - {"YYYY-MM-DD": number, ...} (format of GitLab's /users/:username/calendar.json)
-   */
+  //JSON file served over http(s)
+  //Accepted formats:
+  //- [{date: "YYYY-MM-DD", contributionCount: number, color?: string}, ...] ("count" is also accepted)
+  //- {"YYYY-MM-DD": number, ...} (format of GitLab's /users/:username/calendar.json)
   async file({source: {url, headers = {}}, start, end, imports}) {
     if (!url)
       throw new Error('missing "url"')
     const {data} = await imports.axios.get(url, {headers})
-    const entries = Array.isArray(data) ? data.map(({date, contributionCount, count}) => [date, contributionCount ?? count]) : Object.entries(data ?? {})
-    const counts = new Map()
-    for (const [date, count] of entries) {
+    const entries = Array.isArray(data) ? data.map(({date, contributionCount, count, color}) => [date, contributionCount ?? count, color]) : Object.entries(data ?? {})
+    const days = new Map()
+    for (const [date, count, color] of entries) {
       const key = day(date)
       if ((new Date(key) < new Date(day(start))) || (new Date(key) > end))
         continue
-      counts.set(key, (counts.get(key) ?? 0) + (Number(count) || 0))
+      const entry = days.get(key) ?? {count: 0}
+      entry.count += Number(count) || 0
+      entry.color = color ?? entry.color
+      days.set(key, entry)
     }
-    return counts
+    return days
   },
 
-  /** GitLab events API (authenticated user's own events)
-   * - url: GitLab instance (default: https://gitlab.com)
-   * - token: personal access token with "read_user" scope
-   * - count: "events" (each event is one contribution, like GitLab calendar) or "commits" (pushed commits)
-   */
+  //GitLab events API (authenticated user's own events)
+  //- url: GitLab instance (default: https://gitlab.com)
+  //- token: personal access token with "read_user" scope
+  //- count: "events" (each event is one contribution, like GitLab calendar) or "commits" (pushed commits)
   async gitlab({login, source: {url = "https://gitlab.com", token, count = "events"}, start, end, imports}) {
     if (!token)
       throw new Error('missing "token"')
-    const counts = new Map()
+    const days = new Map()
     //GitLab "after" and "before" filters are exclusive
     const after = new Date(start)
     after.setUTCDate(after.getUTCDate() - 1)
@@ -86,11 +90,13 @@ const loaders = {
         if (!value)
           continue
         const key = day(event.created_at)
-        counts.set(key, (counts.get(key) ?? 0) + value)
+        const entry = days.get(key) ?? {count: 0}
+        entry.count += value
+        days.set(key, entry)
       }
       if (events.length < 100)
         break
     }
-    return counts
+    return days
   },
 }

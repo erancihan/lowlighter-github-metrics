@@ -119,8 +119,8 @@ async function statistics({login, graphql, queries, start, end, calendar, extern
   for (const week of calendar.weeks) {
     for (const day of week.contributionDays) {
       day.sources = [{name: "github", color: day.color, contributionCount: day.contributionCount}]
-      for (const {name, color, counts} of external) {
-        const contributionCount = counts.get(day.date) ?? 0
+      for (const {name, days} of external) {
+        const {count: contributionCount = 0, color} = days.get(day.date) ?? {}
         if (contributionCount)
           day.sources.push({name, color, contributionCount})
       }
