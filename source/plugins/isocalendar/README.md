@@ -59,6 +59,34 @@ All product and company names are trademarks™ or registered® trademarks of th
 <b>default:</b> half-year<br>
 <b>allowed values:</b><ul><li>half-year</li><li>full-year</li></ul></td>
   </tr>
+  <tr>
+    <td nowrap="nowrap"><h4><code>plugin_isocalendar_sources</code></h4></td>
+    <td rowspan="2"><p>External contributions sources</p>
+<p>Contributions from these sources are merged by date with GitHub contributions and stacked on calendar.
+Each source is an object with a <code>type</code>, an optional <code>name</code> and an optional <code>color</code>, along with type specific settings:</p>
+<ul>
+<li><code>file</code>: JSON file served over http(s)<ul>
+<li><code>url</code>: File URL (mandatory)</li>
+<li><code>headers</code>: Additional request headers (e.g. <code>{&quot;Authorization&quot;: &quot;token ...&quot;}</code> for private files)</li>
+<li>Accepted formats are <code>[{&quot;date&quot;: &quot;YYYY-MM-DD&quot;, &quot;contributionCount&quot;: 1}]</code> and <code>{&quot;YYYY-MM-DD&quot;: 1}</code> (GitLab&#39;s <code>/users/:username/calendar.json</code>)</li>
+</ul>
+</li>
+<li><code>gitlab</code>: GitLab events API (gitlab.com or self-hosted)<ul>
+<li><code>url</code>: GitLab instance URL (defaults to <code>https://gitlab.com</code>)</li>
+<li><code>token</code>: GitLab personal access token with <code>read_user</code> scope (mandatory, use a secret)</li>
+<li><code>count</code>: <code>events</code> to count each event like GitLab calendar does (default), or <code>commits</code> to count pushed commits</li>
+</ul>
+</li>
+</ul>
+<p>Instance must be reachable from runner for <code>gitlab</code> sources.</p>
+<img width="900" height="1" alt=""></td>
+  </tr>
+  <tr>
+    <td nowrap="nowrap">✨ On <code>master</code>/<code>main</code><br>
+<b>type:</b> <code>json</code>
+<br>
+<b>default:</b> <details><summary>→ Click to expand</summary><pre language="json"><code>[]</code></pre></details><br></td>
+  </tr>
 </table>
 <!--/options-->
 

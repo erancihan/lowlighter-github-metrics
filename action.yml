@@ -266,6 +266,10 @@ inputs:
     description: Time range
     default: <default-value>
 
+  plugin_isocalendar_sources:
+    description: External contributions sources
+    default: <default-value>
+
   # ====================================================================================
   # 🈷️ Languages activity
 
