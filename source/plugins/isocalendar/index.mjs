@@ -1,3 +1,6 @@
+//Imports
+import * as sources from "./sources.mjs"
+
 //Setup
 export default async function({login, data, graphql, q, imports, queries, account}, {enabled = false, extras = false} = {}) {
   //Plugin execution
@@ -7,7 +10,7 @@ export default async function({login, data, graphql, q, imports, queries, accoun
       return null
 
     //Load inputs
-    let {duration} = imports.metadata.plugins.isocalendar.inputs({data, account, q})
+    let {duration, sources: _sources} = imports.metadata.plugins.isocalendar.inputs({data, account, q})
 
     //Compute start day
     const now = new Date()
@@ -25,10 +28,13 @@ export default async function({login, data, graphql, q, imports, queries, accoun
     start.setUTCMinutes(0)
     start.setUTCHours(0)
 
+    //Load contributions from external sources
+    const external = await sources.load({login, sources: _sources, start, end: now, imports})
+
     //Compute contribution calendar, highest contributions in a day, streaks and average commits per day
     console.debug(`metrics/compute/${login}/plugins > isocalendar > computing stats`)
     const calendar = {weeks: []}
-    const {streak, max, average} = await statistics({login, graphql, queries, start, end: now, calendar})
+    const {streak, max, average} = await statistics({login, graphql, queries, start, end: now, calendar, external})
     const reference = Math.max(...calendar.weeks.flatMap(({contributionDays}) => contributionDays.map(({contributionCount}) => contributionCount)))
 
     //Compute SVG
@@ -56,9 +62,19 @@ export default async function({login, data, graphql, q, imports, queries, accoun
         const ratio = (day.contributionCount / reference) || 0
         svg += `
                     <g transform="translate(${j * -1.7}, ${j + (1 - ratio) * size})">
-                      <path fill="${day.color}" d="M1.7,2 0,1 1.7,0 3.4,1 z" />
-                      <path fill="${day.color}" filter="url(#brightness1)" d="M0,1 1.7,2 1.7,${2 + ratio * size} 0,${1 + ratio * size} z" />
-                      <path fill="${day.color}" filter="url(#brightness2)" d="M1.7,2 3.4,1 3.4,${1 + ratio * size} 1.7,${2 + ratio * size} z" />
+                      <path fill="${day.color}" d="M1.7,2 0,1 1.7,0 3.4,1 z" />`
+        //Stack each source contribution on sides
+        let offset = 0
+        for (const {color, contributionCount} of day.sources) {
+          const height = ((contributionCount / reference) || 0) * size
+          if (!height)
+            continue
+          svg += `
+                      <path fill="${color}" filter="url(#brightness1)" d="M0,${1 + offset} 1.7,${2 + offset} 1.7,${2 + offset + height} 0,${1 + offset + height} z" />
+                      <path fill="${color}" filter="url(#brightness2)" d="M1.7,${2 + offset} 3.4,${1 + offset} 3.4,${1 + offset + height} 1.7,${2 + offset + height} z" />`
+          offset += height
+        }
+        svg += `
                     </g>`
         j++
       }
@@ -68,7 +84,7 @@ export default async function({login, data, graphql, q, imports, queries, accoun
     svg += "</g></svg>"
 
     //Results
-    return {streak, max, average, svg, duration}
+    return {streak, max, average, svg, duration, sources: [{name: "github"}, ...external.map(({name, color}) => ({name, color}))]}
   }
   //Handle errors
   catch (error) {
@@ -77,7 +93,7 @@ export default async function({login, data, graphql, q, imports, queries, accoun
 }
 
 /**Compute max and current streaks */
-async function statistics({login, graphql, queries, start, end, calendar}) {
+async function statistics({login, graphql, queries, start, end, calendar, external}) {
   let average = 0, max = 0, streak = {max: 0, current: 0}, values = []
   //Load contribution calendar
   for (let from = new Date(start); from < end;) {
@@ -98,6 +114,20 @@ async function statistics({login, graphql, queries, start, end, calendar}) {
     calendar.weeks.push(...weeks)
     //Set next date range start
     from = new Date(to)
+  }
+  //Merge external sources contributions (matched by date)
+  for (const week of calendar.weeks) {
+    for (const day of week.contributionDays) {
+      day.sources = [{name: "github", color: day.color, contributionCount: day.contributionCount}]
+      for (const {name, days} of external) {
+        const {count: contributionCount = 0, color} = days.get(day.date) ?? {}
+        if (contributionCount)
+          day.sources.push({name, color, contributionCount})
+      }
+      day.contributionCount = day.sources.reduce((total, {contributionCount}) => total + contributionCount, 0)
+      //Top face uses color of the source with most contributions
+      day.color = day.sources.reduce((top, source) => source.contributionCount > top.contributionCount ? source : top).color
+    }
   }
   //Compute streaks
   for (const week of calendar.weeks) {
